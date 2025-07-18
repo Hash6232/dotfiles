@@ -1,0 +1,45 @@
+#!/usr/bin/env python3
+
+import plistlib
+from datetime import datetime, timezone
+import sys
+import os
+
+def update_or_add_plist_datetime(plist_path, key_to_update):
+    if not os.path.exists(plist_path):
+        print(f"Error: File not found -> {plist_path}")
+        return
+
+    with open(plist_path, 'rb') as f:
+        plist_data = plistlib.load(f)
+
+    now = datetime.now(timezone.utc)
+
+    if key_to_update in plist_data:
+        current_value = plist_data[key_to_update]
+        print(f"{key_to_update} found: {current_value} (type: {type(current_value)})")
+
+        if isinstance(current_value, datetime):
+            plist_data[key_to_update] = now
+            print(f"Updated '{key_to_update}' to: {now}")
+        else:
+            print(f"Warning: '{key_to_update}' exists but is not a datetime. Overwriting.")
+            plist_data[key_to_update] = now
+    else:
+        print(f"'{key_to_update}' not found. Adding new key.")
+        plist_data[key_to_update] = now
+        print(f"Added '{key_to_update}' with value: {now}")
+
+    # Save the plist
+    with open(plist_path, 'wb') as f:
+        plistlib.dump(plist_data, f)
+
+    print(f"Plist '{plist_path}' updated successfully.")
+
+# Entry point
+if __name__ == "__main__":
+    if len(sys.argv) != 2:
+        print("Usage: crossover-trial-reset <path_to_plist>")
+    else:
+        plist_path = sys.argv[1]
+        update_or_add_plist_datetime(plist_path, "FirstRunDate")

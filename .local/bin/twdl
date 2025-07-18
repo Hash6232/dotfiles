@@ -1,0 +1,27 @@
+#!/bin/bash
+
+SCRIPT_NAME="$(basename "$0")"
+
+if [ "$1" == "-w" ]; then
+    INPUT="$2"
+    if [[ "$INPUT" == https://* ]]; then
+        yt-dlp --recode-video webm \
+               --postprocessor-args "-b:v 2M -c:v libvpx-vp9 -an" \
+               "$INPUT"
+    fi
+
+elif [ "$1" == "-a" ]; then
+    INPUT="$2"
+    if [[ "$INPUT" == https://* ]]; then
+        yt-dlp "$INPUT"
+    fi
+
+elif [[ "$1" == https://* ]]; then
+    yt-dlp --ppa "-an" "$1"
+
+else
+    echo "Usage:"
+    echo "  $SCRIPT_NAME -w \"https://..\"  # Download and re-encode to WebM (no audio)"
+    echo "  $SCRIPT_NAME -a \"https://..\"  # Download preserving audio"
+    echo "  $SCRIPT_NAME \"https://..\"     # Download and remove audio"
+fi

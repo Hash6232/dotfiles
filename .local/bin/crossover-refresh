@@ -1,0 +1,4 @@
+#!/bin/bash
+
+PLIST="$HOME/Library/Preferences/com.codeweavers.CrossOver.plist"
+crossover-trial-reset "$PLIST"
