@@ -8,7 +8,7 @@ JSON dump of the settings from the Local Storage
 
 ```json
 {
-  "disableWheelNavigation": "0",
+  "disableWheelNavigation": "1",
   "trackerForwardSkipThreshold": "2700",
   "trackerPopupDetection": "0",
   "showExternalPlaceholder": "0",
