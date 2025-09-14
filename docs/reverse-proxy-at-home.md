@@ -1,8 +1,8 @@
 # Reverse Proxy with Wireguard, DDNS, Caddy and Pihole
 
-This document describes the process of setting up a reverse proxy for free. Linux and networking basics are required.  
+This document describes the process of setting up a reverse proxy for free. Linux and networking basics are taken for granted.  
 
-In a nuthsell, connecting to the Wireguard server from a deSEC address will grant you access to the services running on the system without opening a port for each one of them.
+In a nuthsell, connecting to the Wireguard server from a deSEC address will grant you access to the services running on the system without the need of port forwarding each one of them.
 Wireguard will use Pihole as DNS Proxy in order to resolve subdomains to a local IP and ddclient will keep your deSEC address synced to your dynamic IP.
 Finally, the deSEC address subdomains are reverse proxied by Caddy and certified by acme.sh through deSEC API every 60 days.
 
@@ -13,7 +13,7 @@ For simplicity I will describe the process based on this setup:
 - Server linked via cable to the internet
 - Laptop to configure the server via SSH
 - New Debian installation
-- Username named `hare`
+- User named `hare`
 - Server IP set to `192.168.1.10`
 - Router IP set to `192.168.1.1`
 - Router DHCP range not overlapping with the server IP
@@ -46,7 +46,7 @@ address 192.168.1.10
 netmask 255.255.255.0
 gateway 192.168.1.1
 ```
-- Reboot running `restart now`
+- Reboot running `reboot`
 
 ## First configuration
 
@@ -77,7 +77,8 @@ gateway 192.168.1.1
 PUID=1000
 PGID=1000
 TZ=Etc/UTC # Find your timezone @ https://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List
-
+```
+```bash
 # wireguard.env
 SERVERURL=himari.dedyn.io
 SERVERPORT=51820
@@ -86,7 +87,8 @@ PEERDNS=auto
 INTERNAL_SUBNET=10.13.13.0
 ALLOWEDIPS=0.0.0.0/0
 PERSISTENTKEEPALIVE_PEERS=all
-
+```
+```bash
 # pihole.env
 PIHOLE_UID=1000
 PIHOLE_GID=1000
@@ -180,9 +182,12 @@ login=himari.dedyn.io
 password='desec-secret-token'
 himari.dedyn.io 
 ```
-- Log into your router and [port forward](https://portforward.com/how-to-port-forward/#step-2-log-in-to-your-router) your wireguard port `51820` for server ip `192.168.1.10`
+- Log into your router and [port forward](https://portforward.com/how-to-port-forward/#step-2-log-in-to-your-router) your wireguard port `51820` for `192.168.1.10`
 - Navigate to `~/docker/vpn` and run `docker compose up -d`
 - Configure your `Caddyfile` in `~/docker/reverse-proxy/caddy`:
+> [!WARNING]
+> Use the internal port (`80`) defined in `reverse-proxy/docker-compose.yml`, not the external port (`8080`).  
+> This is because the `Caddyfile` communicates with the container directly over the Docker network, using the container's internal port.
 ```
 *.himari.dedyn.io {
 	tls /certs/himari.dedyn.io/fullchain.cer /certs/himari.dedyn.io/himari.dedyn.io.key
@@ -200,10 +205,10 @@ himari.dedyn.io
 export DEDYN_TOKEN="desec-secret-token"
 acme.sh --issue --dns dns_desec -d himari.dedyn.io -d '*.himari.dedyn.io'
 
-# Save API token in `.bashrc`
+# Save the API token in .bashrc
 echo 'export DEDYN_TOKEN="desec-secret-token"' >> ~/.bashrc
 
-# Install
+# Copy the certificate inside Caddy's container
 acme.sh --install-cert -d himari.dedyn.io \  
   --key-file       $HOME/docker/reverse-proxy/caddy/certs/himari.dedyn.io/himari.dedyn.io.key \  
   --fullchain-file $HOME/docker/reverse-proxy/caddy/certs/himari.dedyn.io/fullchain.cer \  
@@ -214,11 +219,11 @@ acme.sh --install-cert -d himari.dedyn.io \
 - Add a new entry for `pihole.himari.dedyn.io` pointing to `192.168.1.10`
 - Open a new terminal window on your laptop and run:
 ```bash
-# Copies peer1.conf to your current directory on your local system
-scp hare192.168.1.10:~/docker/vpn/wireguard/peer1/peer1.conf .
+# Copies peer1.conf from your server to your laptop
+scp hare@192.168.1.10:~/docker/vpn/wireguard/peer1/peer1.conf .
 ```
-- Add the config file to your [Wireguard client](https://www.wireguard.com/install/) and connect to the server
-- Open the browser and visit `https://pihole.himari.dedyn.io`
+- Import the config file to your [Wireguard client](https://www.wireguard.com/install/) and connect to the server
+- Open your browser and visit `https://pihole.himari.dedyn.io`
 - Enjoy
 
 ## (Optional) Add a new service
